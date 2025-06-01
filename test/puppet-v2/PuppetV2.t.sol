@@ -97,9 +97,7 @@ contract PuppetV2Challenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_puppetV2() public checkSolvedByPlayer {
-        
-    }
+    function test_puppetV2() public checkSolvedByPlayer {}
 
     /**
      * CHECKS SUCCESS CONDITIONS - DO NOT TOUCH

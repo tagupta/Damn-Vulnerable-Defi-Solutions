@@ -122,9 +122,7 @@ contract FreeRiderChallenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_freeRider() public checkSolvedByPlayer {
-        
-    }
+    function test_freeRider() public checkSolvedByPlayer {}
 
     /**
      * CHECKS SUCCESS CONDITIONS - DO NOT TOUCH

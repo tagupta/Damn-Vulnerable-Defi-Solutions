@@ -69,9 +69,7 @@ contract BackdoorChallenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_backdoor() public checkSolvedByPlayer {
-        
-    }
+    function test_backdoor() public checkSolvedByPlayer {}
 
     /**
      * CHECKS SUCCESS CONDITIONS - DO NOT TOUCH

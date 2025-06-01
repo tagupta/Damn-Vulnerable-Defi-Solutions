@@ -91,9 +91,7 @@ contract PuppetChallenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_puppet() public checkSolvedByPlayer {
-        
-    }
+    function test_puppet() public checkSolvedByPlayer {}
 
     // Utility function to calculate Uniswap prices
     function _calculateTokenToEthInputPrice(uint256 tokensSold, uint256 tokensInReserve, uint256 etherInReserve)

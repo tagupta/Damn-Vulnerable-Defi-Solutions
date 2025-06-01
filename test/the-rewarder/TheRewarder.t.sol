@@ -147,9 +147,7 @@ contract TheRewarderChallenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_theRewarder() public checkSolvedByPlayer {
-        
-    }
+    function test_theRewarder() public checkSolvedByPlayer {}
 
     /**
      * CHECKS SUCCESS CONDITIONS - DO NOT TOUCH

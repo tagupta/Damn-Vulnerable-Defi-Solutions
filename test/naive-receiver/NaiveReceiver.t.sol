@@ -76,9 +76,7 @@ contract NaiveReceiverChallenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_naiveReceiver() public checkSolvedByPlayer {
-        
-    }
+    function test_naiveReceiver() public checkSolvedByPlayer {}
 
     /**
      * CHECKS SUCCESS CONDITIONS - DO NOT TOUCH

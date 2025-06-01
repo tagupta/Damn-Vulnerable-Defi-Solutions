@@ -156,9 +156,7 @@ contract WalletMiningChallenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_walletMining() public checkSolvedByPlayer {
-        
-    }
+    function test_walletMining() public checkSolvedByPlayer {}
 
     /**
      * CHECKS SUCCESS CONDITIONS - DO NOT TOUCH
