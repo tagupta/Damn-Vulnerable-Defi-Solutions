@@ -18,8 +18,6 @@ contract FlashLoanEtherReceiver {
 
     function execute() external payable {
         i_pool.deposit{value: msg.value}();
-        (bool success,) = address(i_pool).call{value: msg.value}("");
-        (success);
     }
 
     receive() external payable {
