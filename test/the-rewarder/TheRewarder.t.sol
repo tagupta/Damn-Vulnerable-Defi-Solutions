@@ -7,11 +7,6 @@ import {Merkle} from "murky/Merkle.sol";
 import {WETH} from "solmate/tokens/WETH.sol";
 import {TheRewarderDistributor, IERC20, Distribution, Claim} from "../../src/the-rewarder/TheRewarderDistributor.sol";
 import {DamnValuableToken} from "../../src/DamnValuableToken.sol";
-
-contract RewardReceiver {
-    constructor() {}
-}
-
 contract TheRewarderChallenge is Test {
     address deployer = makeAddr("deployer");
     address player = makeAddr("player");
@@ -154,6 +149,7 @@ contract TheRewarderChallenge is Test {
     function test_theRewarder() public checkSolvedByPlayer {
         bytes32[] memory dvtLeaves = _loadRewards("/test/the-rewarder/dvt-distribution.json");
         bytes32[] memory wethLeaves = _loadRewards("/test/the-rewarder/weth-distribution.json");
+        
         IERC20[] memory tokensToClaim = new IERC20[](2);
         tokensToClaim[0] = IERC20(address(dvt));
         tokensToClaim[1] = IERC20(address(weth));
