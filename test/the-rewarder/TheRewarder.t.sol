@@ -7,6 +7,7 @@ import {Merkle} from "murky/Merkle.sol";
 import {WETH} from "solmate/tokens/WETH.sol";
 import {TheRewarderDistributor, IERC20, Distribution, Claim} from "../../src/the-rewarder/TheRewarderDistributor.sol";
 import {DamnValuableToken} from "../../src/DamnValuableToken.sol";
+
 contract TheRewarderChallenge is Test {
     address deployer = makeAddr("deployer");
     address player = makeAddr("player");
@@ -149,27 +150,27 @@ contract TheRewarderChallenge is Test {
     function test_theRewarder() public checkSolvedByPlayer {
         bytes32[] memory dvtLeaves = _loadRewards("/test/the-rewarder/dvt-distribution.json");
         bytes32[] memory wethLeaves = _loadRewards("/test/the-rewarder/weth-distribution.json");
-        
+
         IERC20[] memory tokensToClaim = new IERC20[](2);
         tokensToClaim[0] = IERC20(address(dvt));
         tokensToClaim[1] = IERC20(address(weth));
 
         Claim[] memory claims = new Claim[](1720);
-        for(uint i = 0 ; i < 867; i++){
+        for (uint256 i = 0; i < 867; i++) {
             claims[i] = Claim({
-            batchNumber: 0, // claim corresponds to first DVT batch
-            amount: 11524763827831882,
-            tokenIndex: 0, // claim corresponds to first token in `tokensToClaim` array
-            proof: merkle.getProof(dvtLeaves, 188)
-        });
+                batchNumber: 0, // claim corresponds to first DVT batch
+                amount: 11524763827831882,
+                tokenIndex: 0, // claim corresponds to first token in `tokensToClaim` array
+                proof: merkle.getProof(dvtLeaves, 188)
+            });
         }
 
-        for(uint i = 867; i < 1720; i++){
+        for (uint256 i = 867; i < 1720; i++) {
             claims[i] = Claim({
-            batchNumber: 0, // claim corresponds to first WETH batch
-            amount: 1171088749244340,
-            tokenIndex: 1, // claim corresponds to second token in `tokensToClaim` array
-            proof: merkle.getProof(wethLeaves, 188)
+                batchNumber: 0, // claim corresponds to first WETH batch
+                amount: 1171088749244340,
+                tokenIndex: 1, // claim corresponds to second token in `tokensToClaim` array
+                proof: merkle.getProof(wethLeaves, 188)
             });
         }
         distributor.claimRewards({inputClaims: claims, inputTokens: tokensToClaim});

