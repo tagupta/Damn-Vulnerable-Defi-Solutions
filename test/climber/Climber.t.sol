@@ -170,7 +170,6 @@ contract ClimberChallenge is Test {
      */
     function test_climber() public checkSolvedByPlayer {
         ClimberVaultV2 vaultV2 = new ClimberVaultV2();
-
         HelperContract helper = new HelperContract(timelock);
 
         bytes memory data =
