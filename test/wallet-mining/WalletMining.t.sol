@@ -35,7 +35,15 @@ contract TokenRescuer {
     address immutable i_ward;
     AuthorizerUpgradeable immutable i_authorizer;
     WalletDeployer immutable i_walletDeployer;
-    constructor(address userDepositAddress, DamnValuableToken token, address user, address ward, AuthorizerUpgradeable authorizer, WalletDeployer walletDeployer ){
+
+    constructor(
+        address userDepositAddress,
+        DamnValuableToken token,
+        address user,
+        address ward,
+        AuthorizerUpgradeable authorizer,
+        WalletDeployer walletDeployer
+    ) {
         i_userDepositAddress = userDepositAddress;
         i_token = token;
         i_userToSave = user;
@@ -71,6 +79,7 @@ contract TokenRescuer {
         i_token.transfer(i_ward, i_token.balanceOf(address(this)));
     }
 }
+
 contract WalletMiningChallenge is Test {
     address deployer = makeAddr("deployer");
     address upgrader = makeAddr("upgrader");
@@ -203,8 +212,8 @@ contract WalletMiningChallenge is Test {
      * CODE YOUR SOLUTION HERE
      */
     function test_walletMining() public checkSolvedByPlayer {
-         new TokenRescuer(USER_DEPOSIT_ADDRESS, token, user, ward, authorizer, walletDeployer).rescue();
-         assertEq(token.balanceOf(ward), walletDeployer.pay());
+        new TokenRescuer(USER_DEPOSIT_ADDRESS, token, user, ward, authorizer, walletDeployer).rescue();
+        assertEq(token.balanceOf(ward), walletDeployer.pay());
 
         bytes32 messageHash = Safe(payable(USER_DEPOSIT_ADDRESS)).getTransactionHash({
             to: address(token),
@@ -266,4 +275,3 @@ contract WalletMiningChallenge is Test {
         assertEq(token.balanceOf(ward), initialWalletDeployerTokenBalance, "Not enough tokens in ward's account");
     }
 }
-
