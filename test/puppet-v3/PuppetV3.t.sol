@@ -44,8 +44,6 @@ contract PriceCrasher is IUniswapV3SwapCallback{
             sqrtPriceLimitX96: TickMath.MIN_SQRT_RATIO + 1,
             data: bytes("")
         });
-        console.log("DVT balance: ", i_dvt.balanceOf(address(this))); //9.39
-        console.log("WETH balance: ", i_weth.balanceOf(address(this))); //100.99 ether
     }
     
     function borrowAttack() external {
